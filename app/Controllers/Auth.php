@@ -31,7 +31,7 @@ class Auth extends BaseController
                     'role_admin' => $admin->role_admin // Asumsikan ada kolom 'role_admin' di tabel 'admin'
                 ];
                 session()->set($params);
-    
+
                 return redirect()->to(site_url('home'));
             } else {
                 return redirect()->back()->with('error', 'Password tidak sesuai');
@@ -70,5 +70,63 @@ class Auth extends BaseController
         $model->insert($userData);
 
         return redirect()->to(site_url('login'))->with('success', 'Registration successful! Please log in.');
+    }
+
+    public function insertCustomersApi()
+    {
+        $requestData = $this->request->getJSON();
+
+        $validation = $this->validate([
+            'first_name_customer' => 'required',
+            'last_name_customer' => 'required',
+            'email_customer' => 'required',
+            'password_customer' => 'required',
+            'birthdate_customer' => 'required',
+            'phone_customer' => 'required',
+        ]);
+
+        if (!$validation) {
+            $this->response->setStatusCode(400);
+            echo json_encode([
+                'code' => 400,
+                'status' => 'BAD REQUEST',
+                'data' => null
+            ]);
+            return;
+        }
+
+        $hashedPassword = password_hash($requestData->password_customer, PASSWORD_BCRYPT);
+
+        $data = [
+            'first_name_customer' => $requestData->first_name_customer,
+            'last_name_customer' => $requestData->last_name_customer,
+            'email_customer' => $requestData->email_customer,
+            'password_customer' => $hashedPassword,
+            'birthdate_customer' => $requestData->birthdate_customer,
+            'phone_customer' => $requestData->phone_customer
+        ];
+
+        if (property_exists($requestData, 'photo_customer')) {
+            $data['photo_customer'] = $requestData->photo_customer;
+        }
+
+        $model = new \App\Models\CustomersModel(); // Inisialisasi model
+        $insert = $model->insert($data); // Gunakan metode insert() dari model
+
+        if ($insert) {
+            echo json_encode([
+                'code' => 200,
+                'status' => 'OK',
+                'data' => $data
+            ]);
+        } else {
+            $this->response->setStatusCode(500);
+            echo json_encode([
+                'code' => 500,
+                'status' => 'INTERNAL SERVER ERROR',
+                'message' => 'Failed to insert customer data into the database',
+                'data' => null
+            ]);
+        }
     }
 }

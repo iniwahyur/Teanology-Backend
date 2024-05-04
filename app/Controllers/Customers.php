@@ -4,9 +4,14 @@ namespace App\Controllers;
 
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourcePresenter;
+use CodeIgniter\API\ResponseTrait;
 
 class Customers extends ResourcePresenter
 {
+
+    protected $format = 'json';
+
+    use ResponseTrait;
     protected $modelName = 'App\Models\CustomersModel';
     /**
      * Present a view of resource objects.
@@ -17,6 +22,20 @@ class Customers extends ResourcePresenter
     {
         $data['customers'] = $this->model->findAll();
         return view('customers/index', $data);
+    }
+
+    public function readCustomersApi()
+    {
+        // $customers = $this->model->findAll();
+        // return $this->response->setJSON($customers);
+
+        $customers = $this->model->findAll();
+
+        return $this->response->setJSON([
+            'code' => 200,
+            'status' => 'OK',
+            'data' => $customers
+        ]);
     }
 
     /**
@@ -39,6 +58,39 @@ class Customers extends ResourcePresenter
     public function new()
     {
         return view ('customers/new');
+    }
+
+    public function getCustomersApi($id)
+    {
+        // Validasi ID
+        if (!is_numeric($id) || $id <= 0) {
+            $this->response->setStatusCode(400);
+            return $this->response->setJSON([
+                'code' => 400,
+                'status' => 'BAD REQUEST',
+                'message' => 'Invalid ID provided'
+            ]);
+        }
+
+        // Cari produk berdasarkan ID
+        $customers = $this->model->find($id);
+
+        // Jika produk tidak ditemukan
+        if (!$customers) {
+            $this->response->setStatusCode(404);
+            return $this->response->setJSON([
+                'code' => 404,
+                'status' => 'NOT FOUND',
+                'message' => 'Customers not found'
+            ]);
+        }
+
+        // Mengembalikan respons dengan produk yang ditemukan
+        return $this->response->setJSON([
+            'code' => 200,
+            'status' => 'OK',
+            'data' => $customers
+        ]);
     }
 
     /**
@@ -161,6 +213,67 @@ class Customers extends ResourcePresenter
         }
     }
 
+
+    public function updateCustomersApi($id)
+    {
+        $customers = $this->model->find($id);
+
+        if (!$customers) {
+            $this->response->setStatusCode(404);
+            return $this->response->setJSON([
+                'code' => 404,
+                'status' => 'NOT FOUND',
+                'data' => 'Customers not found'
+            ]);
+        }
+
+        $requestData = $this->request->getJSON();
+
+        // Persiapkan data untuk pembaruan
+        $data = [];
+
+        // Cek atribut mana yang ada dalam permintaan dan tambahkan ke data pembaruan
+        if (isset($requestData->first_name_customer)) {
+            $data['first_name_customer'] = $requestData->first_name_customer;
+        }
+
+        if (isset($requestData->last_name_customer)) {
+            $data['last_name_customer'] = $requestData->last_name_customer;
+        }
+
+        if (isset($requestData->email_customer)) {
+            $data['email_customer'] = $requestData->email_customer;
+        }
+
+        if (isset($requestData->password_customer)) {
+            $data['password_customer'] = password_hash($requestData->password_customer, PASSWORD_BCRYPT);
+        }
+
+        if (isset($requestData->phone_customer)) {
+            $data['phone_customer'] = $requestData->phone_customer;
+        }
+
+        if (isset($requestData->birthdate_customer)) {
+            $data['birthdate_customer'] = $requestData->birthdate_customer;
+        }
+
+        // Jika 'photo_product' ada dalam data permintaan, tambahkan ke data pembaruan
+        if (isset($requestData->photo_customer)) {
+            $data['photo_customer'] = $requestData->photo_customer;
+        }
+
+        // Lakukan pembaruan data produk
+        $this->model->update($id, $data);
+
+        // Kirim respons berhasil
+        return $this->respond([
+            'code' => 200,
+            'status' => 'OK',
+            'data' => 'Customers updated successfully'
+        ]);
+    }
+
+
     /**
      * Present a view to confirm the deletion of a specific resource object.
      *
@@ -205,4 +318,27 @@ class Customers extends ResourcePresenter
         // Redirect ke halaman admin dengan pesan sukses
         return redirect()->to(site_url('customers'))->with('success', 'Data berhasil dihapus');
     }
+
+    public function deleteCustomersApi($id)
+    {
+        $customers = $this->model->find($id);
+
+        if (!$customers) {
+            $this->response->setStatusCode(404);
+            return $this->response->setJSON([
+                'code' => 404,
+                'status' => 'NOT FOUND',
+                'data' => 'Customers not found'
+            ]);
+        }
+
+        $this->model->delete($id);
+
+        return $this->respond([
+            'code' => 200,
+            'status' => 'OK',
+            'data' => 'Customers deleted successfully'
+        ]);
+    }
+
 }

@@ -29,8 +29,9 @@ $routes->get('create-db', function(){
 // $routes->delete('products/(:segment)', 'Products::destroy/$1');
 
 // Auth
-$routes->get('login', 'Auth::login');
-$routes->get('register', 'Auth::register');
+$routes->group('api', function ($routes) {
+$routes->post('register', 'Auth::insertCustomersApi');
+});
 
 // Category
 $routes->get('category/trash', 'Category::trash');
@@ -54,6 +55,7 @@ $routes->get('products/image/(:num)', 'Products::getImage/$1');
 
 
 
+
     $routes->group('api', function ($routes) {
     $routes->get('products', 'Products::readProductsApi');
     $routes->get('products/(:any)', 'Products::getProductsApi/$1');
@@ -64,7 +66,13 @@ $routes->get('products/image/(:num)', 'Products::getImage/$1');
 $routes->presenter('order', ['filter' => 'isLoggedIn']);
 
 // cart
-$routes->presenter('cart', ['filter' => 'isLoggedIn']);
+$routes->group('api', function ($routes) {
+    $routes->get('cart', 'Cart::readCartApi'); // GET ALL CART
+    $routes->get('cart/(:any)', 'Cart::getCartApi/$1'); // GET CART BY ID
+    $routes->post('insert-cart', 'Cart::insertCartApi'); // INSERT CART
+    $routes->put('cart/(:num)', 'Cart::updateCartApi/$1'); // UPDATE CART
+    $routes->delete('cart/(:num)', 'Cart::deleteCartApi/$1'); // DELETE CART
+});
 
 // Wishlist
 $routes->presenter('wishlist', ['filter' => 'isLoggedIn']);
@@ -74,7 +82,12 @@ $routes->presenter('wishlist', ['filter' => 'isLoggedIn']);
 $routes->presenter('admin', ['filter' => 'isLoggedIn']);
 
 // Customers
-$routes->presenter('customers', ['filter' => 'isLoggedIn']);
+    $routes->group('api', function ($routes) {
+    $routes->get('customers', 'Customers::readCustomersApi'); // GET ALL CUSTOMERS
+    $routes->get('customers/(:any)', 'Customers::getCustomersApi/$1'); // GET CUSTOMERS BY ID
+    $routes->put('customers/(:num)', 'Customers::updateCustomersApi/$1'); // UPDATE CUSTOMERS
+    $routes->delete('customers/(:num)', 'Customers::deleteCustomersApi/$1'); // DELETE CUSTOMERS
+});
 
 
 // Home
